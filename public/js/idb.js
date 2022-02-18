@@ -4,13 +4,13 @@ const request = indexedDB.open('budget', 1);
 
 request.onupgradeneeded = function(event) {
     const db = event.target.result;
-    db.createObjectStore('newBudget', { autoIncrement: true });
+    db.createObjectStore('new_transaction', { autoIncrement: true });
 };
 
 request.onsuccess = function(event) {
     db = event.target.result;
-    if(navigator.onLine) {
-        checkDB();
+    if (navigator.onLine) {
+        uploadTransaction();
     }
 };
 
@@ -19,34 +19,42 @@ request.onerror = function(event) {
 };
 
 function saveRecord(record) {
-    const transaction = db.transaction('newBudget', 'readwrite');
-    const store = transaction.objectStore('newBudget');
-    store.add(record);
+    const transaction = db.transaction(['new_transaction'], 'readwrite');
+    const transactionObjectStore = transaction.objectStore('new_transaction');
+    transactionObjectStore.add(record);
 }
 
-function checkDB() {
-    const transaction = db.transaction('newBudget', "readonly");
-    const store = transaction.objectStore("newBudget");
-    const getAll = store.getAll();
+function uploadTransaction() {
+    const transaction = db.transaction(['new_transaction'], 'readwrite');
+    const transactionObjectStore = transaction.objectStore('new_transaction');
+    const getAll = transactionObjectStore.getAll();
 
-    getAll.onsuccess = () => {
+    getAll.onsuccess = function() {
         if (getAll.result.length > 0) {
-            fetch("/api/transaction/bulk", {
-                method: "POST",
+            fetch('/api/transaction', {
+                method: 'POST',
                 body: JSON.stringify(getAll.result),
                 headers: {
-                    Accept: "application/json, text/plain, */*",
-                    "Content-Type": "application/json"
+                    Accept: 'application/json, text/plain, */*',
+                    'Content-Type': 'application/json'
                 }
             })
             .then((response) => response.json())
-            .then(() => {
-                const transaction = db.transaction("newBudget", "readwrite");
-                const store = transaction.objectStore("newBudget");
-                store.clear();
+            .then(serverResponse => {
+                if (serverResponse.message) {
+                    throw new Error(serverResponse);
+                }
+                const transaction = db.transaction(['new_transaction'], 'readwrite');
+                const transactionObjectStore = transaction.objectStore('new_transaction');
+                transactionObjectStore.clear();
+
+                alert('All saved transactions have been submitted');
+            })
+            .catch(err => {
+                console.log(err);
             });
         }
     };
-}
+};
 
-addEventListener("online", checkDB);
+window.addEventListener('online', uploadTransaction);
