@@ -20,14 +20,14 @@ request.onerror = function(event) {
 
 function saveRecord(record) {
     const transaction = db.transaction(['new_transaction'], 'readwrite');
-    const transactionObjectStore = transaction.objectStore('new_transaction');
-    transactionObjectStore.add(record);
-}
+    const trackerObjectStore = transaction.objectStore('new_transaction');
+    trackerObjectStore.add(record);
+};
 
 function uploadTransaction() {
     const transaction = db.transaction(['new_transaction'], 'readwrite');
-    const transactionObjectStore = transaction.objectStore('new_transaction');
-    const getAll = transactionObjectStore.getAll();
+    const trackerObjectStore = transaction.objectStore('new_transaction');
+    const getAll = trackerObjectStore.getAll();
 
     getAll.onsuccess = function() {
         if (getAll.result.length > 0) {
@@ -45,8 +45,8 @@ function uploadTransaction() {
                     throw new Error(serverResponse);
                 }
                 const transaction = db.transaction(['new_transaction'], 'readwrite');
-                const transactionObjectStore = transaction.objectStore('new_transaction');
-                transactionObjectStore.clear();
+                const trackerObjectStore = transaction.objectStore('new_transaction');
+                trackerObjectStore.clear();
 
                 alert('All saved transactions have been submitted');
             })
